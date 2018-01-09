@@ -1,0 +1,447 @@
+//VARIABLE INITIALIZATIONS
+MSET 100
+
+MOV 0 ACC
+
+MOV ACC &memSize
+MOV &memSize ADDR
+MOV 100 MEM
+ADD ACC 1
+
+MOV ACC &memTop
+ADD ACC 1
+
+
+MOV ACC &vert
+MOV &vert ADDR
+MOV "|" MEM
+ADD ACC 1
+
+MOV ACC &horiz
+MOV &horiz ADDR
+MOV "-" MEM
+ADD ACC 1
+
+MOV ACC &sect
+MOV &sect ADDR
+MOV "+" MEM
+ADD ACC 1
+
+
+MOV ACC &nullc
+MOV &nullc ADDR
+MOV " " MEM
+ADD ACC 1
+
+MOV ACC &nullv
+MOV &nullv ADDR
+MOV 0 MEM
+ADD ACC 1
+
+
+MOV ACC &aic
+MOV &aic ADDR
+MOV "O" MEM
+ADD ACC 1
+
+MOV ACC &aiv
+MOV &aiv ADDR
+MOV 1 MEM
+ADD ACC 1
+
+
+MOV ACC &pcc
+MOV &pcc ADDR
+MOV "X" MEM
+ADD ACC 1
+
+MOV ACC &pcv
+MOV &pcv ADDR
+MOV 5 MEM
+ADD ACC 1
+
+MOV ACC &board
+MOV &nullv ADDR
+MOV MEM DATA
+MOV 9 DATB
+MOV &board ADDR
+JSR @initializeArray
+MOV ADDR &memTop
+
+//****MAIN PROGRAM BEGIN****
+
+@main
+//PLAYER TURN
+//User specifies row/col
+MOV "Enter row:" OUT
+MOV IN ACC
+SUB ACC 1
+MOV ACC DATA
+MOV "Enter col:" OUT
+MOV IN ACC
+SUB ACC 1
+MOV ACC DATB
+//Check if spot is available
+JSR @spotAvailable
+TEQN DATD 1
+JUMP @continuePcTurn
+MOV "That spot is taken." OUT
+JSR @printBoard
+JUMP @main
+@continuePcTurn
+//load pc val from mem and set
+MOV &pcv ADDR
+MOV MEM DATC
+//mark that space as user
+JSR @setSpot
+
+JSR @boardIsFull
+MOV 0 ACC
+@ai
+//COMPUTER TURN
+MUL RAND 3
+CHAR ACC 0
+MOV ACC DATA
+MUL RAND 3
+CHAR ACC 0
+MOV ACC DATB
+JSR @spotAvailable
+TEQN 0 DATD
+JUMP @ai
+
+@aiSetSpot
+MOV &aiv ADDR
+MOV MEM DATC
+JSR @setSpot
+JSR @printBoard
+JSR @checkWin
+
+JUMP @main
+//****MAIN PROGRAM END****
+
+//*****CHECK FULL BEGIN*****
+@boardIsFull
+JSR @pushRegisters
+MOV &board ADDR
+MOV 0 ACC
+JSR @addRow
+TGEN 3 DATD
+ADD ACC 1
+JSR @addRow
+TGEN 3 DATD
+ADD ACC 1
+JSR @addRow
+TGEN 3 DATD
+ADD ACC 1
+TEQN ACC 3
+JUMP @tie
+JSR @popRegisters
+RET
+
+@tie
+MOV "Tie!" OUT
+EXIT
+//*****CHECK FULL END*****
+
+//******CHECK WIN BEGIN******
+//No parameters
+//Return in DATD:
+//(0 no win, 1 ai win, 2 pc win)
+@checkWin
+MOV &board ADDR
+JSR @addRow
+JSR @checkIfWinValue
+JSR @addRow
+JSR @checkIfWinValue
+JSR @addRow
+JSR @checkIfWinValue
+
+MOV &board ADDR
+JSR @addCol
+JSR @checkIfWinValue
+JSR @addCol
+JSR @checkIfWinValue
+JSR @addCol
+JSR @checkIfWinValue
+
+MOV &board ADDR
+JSR @addDown
+JSR @checkIfWinValue
+JSR @addUp
+JSR @checkIfWinValue
+RET
+
+@checkIfWinValue
+TEQN DATD 3
+JUMP @determineWinnerAndExit
+TEQN DATD 15
+JUMP @determineWinnerAndExit
+RET
+//ADD FXNS EXPECT PRESET ADDR
+//EXITS WITH ADDR AT NEXT INDEX
+//sum down-right diag
+@addDown
+MOV ACC PUSH
+MOV MEM DATA
+ADD ADDR 4
+MOV ACC ADDR
+
+MOV MEM DATB
+ADD ADDR 4
+MOV ACC ADDR
+
+MOV MEM DATC
+SUB ADDR 6
+MOV ACC ADDR
+
+MOV DATA ACC
+ADD DATB ACC
+ADD DATC ACC
+
+MOV ACC DATD
+MOV POP ACC
+RET
+
+//sum up-right diag
+@addUp
+MOV ACC PUSH
+MOV MEM DATA
+ADD ADDR 2
+MOV ACC ADDR
+
+MOV MEM DATB
+ADD ADDR 2
+MOV ACC ADDR
+
+MOV MEM DATC
+
+MOV DATA ACC
+ADD DATB ACC
+ADD DATC ACC
+
+MOV ACC DATD
+MOV POP ACC
+RET
+
+//sum row
+@addRow
+MOV ACC PUSH
+MOV MEM DATA
+ADD ADDR 1
+MOV ACC ADDR
+
+MOV MEM DATB
+ADD ADDR 1
+MOV ACC ADDR
+
+MOV MEM DATC
+ADD ADDR 1
+MOV ACC ADDR
+
+MOV DATA ACC
+ADD DATB ACC
+ADD DATC ACC
+
+MOV ACC DATD
+MOV POP ACC
+RET
+
+//sum column
+@addCol
+MOV ACC PUSH
+MOV MEM DATA
+ADD ADDR 3
+MOV ACC ADDR
+
+MOV MEM DATB
+ADD ADDR 3
+MOV ACC ADDR
+
+MOV MEM DATC
+SUB ADDR 5
+MOV ACC ADDR
+
+MOV DATA ACC
+ADD DATB ACC
+ADD DATC ACC
+
+MOV ACC DATD
+MOV POP ACC
+RET
+
+//determine who won
+@determineWinnerAndExit
+MOV &aiv ADDR
+MOV MEM ACC
+MUL ACC 3
+MOV ACC DATA
+MOV &pcv ADDR
+MOV MEM ACC
+MUL ACC 3
+MOV ACC DATB
+
+TEQN DATA DATD
+MOV "The computer has won." OUT
+TEQN DATB DATD
+MOV "You won!" OUT
+
+EXIT
+//******CHECK WIN END******
+
+//**CHECK AVAILABILITY BEGIN***
+//Expects row in DATA and col in DATB
+//Return val in DATD:
+//0 Unavailable, 1 Available
+@spotAvailable
+MOV &nullv ADDR
+MOV MEM DATC
+MUL DATA 3
+ADD ACC DATB
+ADD ACC &board
+MOV ACC ADDR
+MOV 1 ACC
+TNEN MEM DATC
+MOV 0 ACC
+MOV ACC DATD
+RET
+//**CHECK AVAILABILITY END***
+
+//***SET SPOT***
+@setSpot
+MUL DATA 3
+ADD DATB ACC
+ADD ACC &board
+MOV ACC ADDR
+MOV DATC MEM
+RET
+//***SET SPOT END***
+
+//***PRINT TICTACTOE BOARD****
+@printBoard
+JSR @pushRegisters
+MOV "" OUT
+MOV &board ADDR
+JSR @printRow
+JSR @printDivider
+JSR @printRow
+JSR @printDivider
+JSR @printRow
+MOV "" OUT
+JSR @popRegisters
+RET
+
+//printRow BEGIN
+@printRow
+MOV ADDR PUSH
+MOV &vert ADDR
+MOV MEM DATD
+MOV POP ADDR
+
+MOV "" ACC
+JSR @catChar
+CAT ACC DATD
+JSR @catChar
+CAT ACC DATD
+JSR @catChar
+
+MOV ACC OUT
+RET
+//printRow END
+
+//catChar BEGIN
+@catChar
+MOV ADDR PUSH
+MOV MEM DATB
+MOV &nullv ADDR
+TEQN MEM DATB
+JUMP @nullCatChar
+MOV &aiv ADDR
+TEQN MEM DATB
+JUMP @aiCatChar
+MOV &pcv ADDR
+TEQN MEM DATB
+JUMP @pcCatChar
+
+@nullCatChar
+MOV &nullc ADDR
+CAT ACC MEM
+JUMP @exitCatChar
+
+@aiCatChar
+MOV &aic ADDR
+CAT ACC MEM
+JUMP @exitCatChar
+
+@pcCatChar
+MOV &pcc ADDR
+CAT ACC MEM
+JUMP @exitCatChar
+
+@exitCatChar
+MOV POP ADDR
+MOV ACC PUSH
+ADD ADDR 1
+MOV ACC ADDR
+MOV POP ACC
+RET
+//catChar END
+
+//printDivider BEGIN
+@printDivider
+MOV ACC PUSH
+MOV ADDR PUSH
+MOV &horiz ADDR
+MOV MEM DATA
+MOV &sect ADDR
+MOV MEM DATB
+CAT DATA DATB
+CAT ACC DATA
+CAT ACC DATB
+CAT ACC DATA
+MOV ACC OUT
+MOV POP ADDR
+MOV POP ACC
+RET
+//printDivider END
+//***PRINT BOARD END****
+
+@pushRegisters
+MOV ACC PUSH
+MOV DATA PUSH
+MOV DATB PUSH
+MOV DATC PUSH
+MOV DATD PUSH
+MOV ADDR PUSH
+RET
+
+@popRegisters
+MOV POP ADDR
+MOV POP DATD
+MOV POP DATC
+MOV POP DATB
+MOV POP DATA
+MOV POP ACC
+RET
+
+//ADDR must be 1st index
+//DATA must be init value
+//DATB must be length
+//Exits with ADDR just after array
+@initializeArray
+JSR @pushRegisters
+ADD ADDR DATB
+MOV ACC DATB
+@loopInitializeArray
+MOV DATA MEM
+ADD ADDR 1
+MOV ACC ADDR
+TEQN DATB ADDR
+JUMP @exitInitializeArray
+JUMP @loopInitializeArray
+@exitInitializeArray
+JSR @popRegisters
+MOV ACC PUSH
+ADD DATB ADDR
+MOV ACC ADDR
+MOV POP ACC
+RET

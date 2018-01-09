@@ -1,0 +1,26 @@
+MSET 20
+
+
+MOV "-13.4567" ACC
+JSR @tnum
+MOV "-13.123aa4567" ACC
+JSR @tnum
+MOV "13.4567" ACC
+JSR @tnum
+MOV "-134567" ACC
+JSR @tnum
+MOV "134567" ACC
+JSR @tnum
+MOV "a13.4567" ACC
+JSR @tnum
+MOV "13.4567a" ACC
+JSR @tnum
+MOV "-a13.4567" ACC
+JSR @tnum
+EXIT
+
+@tnum
+TNUM ACC
+CAT ACC " is a number!"
+MOV ACC OUT
+RET

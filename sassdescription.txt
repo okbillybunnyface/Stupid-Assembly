@@ -1,0 +1,61 @@
+Caroline Gingles CSC 420
+
+Stupid Assembly:
+
+Stupid assembly is an assembly simulator modeled after the language in the puzzle game TIS-100.
+
+Although the syntax is very similar to the language in TIS-100, SAss is much closer in function to real assembly languages.
+
+Basic Syntax:
+
+COMMAND LOCATION LOCATION
+
+COMMAND can be one of numerous commands. It is equivalent to an operator in higher level languages. Not all commands allow locations to be specified, such as the EXIT or RET commands.
+
+LOCATION is typically a memory location, or something else that a value can be read from/written to, such as the standard input. For JUMP commands, LOCATION is a @label declared elsewhere in the code body.
+
+Memory Structure:
+
+Under the hood, SAss is composed of registers, a program counter, a call stack, a memory stack, and a static block of memory. It has no variables, but pointers can be specified to memory locations. Additionally, there are some general-purpose registers for convenience.
+
+Sass is typeless like real assembly, but unlike real assembly where all values are binary, in SAss all values are stored as strings. This is mostly a convenience feature, so that string manipulation can be done easily while maintaining the spirit of bitwise (charwise?) operations. Arithmetic operations parse string values as doubles before calculating, then stringify the result.
+
+Program Counter:
+	Integer value used to store the line number of the next instruction. Cannot be directly accessed, but can be changed by using the JUMP command and a @label.
+
+Call Stack:
+	Stores line numbers to support subroutine calls. Cannot be directly accessed, but instead automatically pushes/pops values using the JSR (jump to subroutine) and RET (return from subroutine) commands.
+
+Memory Stack:
+	Stores any kind of value, but can only read/write in a FILO manner. Accessed using the PUSH, POP, and TOP commands.
+
+Memory Block: 
+	Stores any value, and is accessed using the MEM command. The ADDR register specify to specify the active memory cell.
+
+6 Registers (all function as a LOCATION):
+	2 Special Registers:
+		ACC: This is the accumulator. If an operation has a value result, the result is stored 		here.
+		ADDR: This register is only allowed to store integer values. It is intended to be used 		to access the system memory.
+	4 General Registers: These are general-purpose registers that can store any value.
+		DATA
+		DATB
+		DATC
+		DATD
+
+Special Locations:
+	IN:
+		Standard input.
+	OUT:
+		Standard output.
+	MEM:
+		Reads/writes to the address stored in the ADDR register.
+	&pointers:
+		Stores only positive integer values. Intended to store memory addresses.
+
+
+
+Implementation:
+
+I am using JavaCC to parse my instructions, but wrote my own Token Manager, as SAss's syntax is very simplistic, and so that I can send tokens to the parser in any order I want. This allows SAss to arbitrarily change line numbers and jump around the code with no regard for structure (just like assembly).
+
+SAss is not capable of reading instructions using the prompt, and must be supplied a .sass file to execute.

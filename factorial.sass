@@ -1,0 +1,44 @@
+MOV "Enter a number:" OUT
+MOV IN DATA
+
+JSR @factorial
+
+MOV DATD OUT
+EXIT
+
+
+@factorial
+JSR @pushRegisters
+
+TEQN DATA 1
+JUMP @exit
+
+MOV DATA DATB
+SUB DATA 1
+MOV ACC DATA
+JSR @factorial
+
+MUL DATB DATD
+MOV ACC DATA
+
+@exit
+MOV DATA DATD
+JSR @popRegisters
+RET
+
+
+
+
+@pushRegisters
+MOV ACC PUSH
+MOV DATA PUSH
+MOV DATB PUSH
+MOV DATC PUSH
+RET
+
+@popRegisters
+MOV POP DATC
+MOV POP DATB
+MOV POP DATA
+MOV POP ACC
+RET

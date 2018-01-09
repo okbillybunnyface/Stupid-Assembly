@@ -1,0 +1,148 @@
+options
+{
+    LOOKAHEAD=1;
+}
+PARSER_BEGIN(sass)
+public class sass
+{
+    public static void main(String args[]) throws ParseException 
+    {
+        sass parser;
+        if(args.length == 1)
+        {
+            try
+            {
+                SassCore.initialize(args[0]);
+            }
+            catch(java.io.FileNotFoundException e)
+            {
+                System.out.println("SASS File " + args[0] + " not found.");
+                return;
+            }
+        }
+        else
+        {
+            System.out.println("SASS Usage:");
+            System.out.println("java sass sassFile");
+            return;
+        }
+        parser = new sass(SassCore.next(false));
+        while(true)
+        {
+            sass.ReInit(SassCore.next(true));
+            try
+            {
+                sass.parseOneLine();
+            }
+            catch(TokenMgrError e){}
+        }
+    }
+}
+PARSER_END(sass)
+SKIP :
+{
+    < "\u00fe\u00ff" >
+|   < ("//"|"") (~["\n"])* "\n" >
+}
+TOKEN:
+{
+    < VARIABLE: "&" ["a"-"z","A"-"Z","_"] (["a"-"z","A"-"Z","_","0"-"9"]){0,3} >
+|   < LABEL: "@" (["a"-"z","A"-"Z","_","0"-"9"])+ <EOL> >
+|   < WS: <WHITESPACE> >
+|   < WHITESPACE: ([" "])+ >
+|   < STRING: "\"" (~["\n","\r","\""])* "\"" >
+|   < NUMBER: (<DIGIT>)+ ( "." (<DIGIT>)+ )? >
+|   < DIGIT: ["0"-"9"] >
+|   < EOL: ("\n"|"\r") >
+|   < ACC: ("ACC"|"acc") >
+|   < OUT: ("OUT"|"out") >
+|   < IN: ("IN"|"in") >
+|   < MOVE: ("MOVE"|"move") >
+|   < ADD: ("ADD"|"add") >
+|   < SUB: ("SUB"|"sub") >
+|   < MUL: ("MUL"|"mul") >
+|   < DIV: ("DIV"|"div") >
+|   < EXIT: "EXIT" >
+}
+void parseOneLine():
+{}
+{
+    command() (
+        <EOL>   { return; }
+    |   <EOF>   { return; }
+    )
+|   <EOL>
+|   <EOF>    { return; }
+|   <EXIT>   { System.exit(-1); }
+}
+void command():
+{}
+{
+    operation()
+}
+void operation():
+{}
+{
+    move()
+|   add()
+|   subtract()
+|   divide()
+|   multiply()
+}
+void add():
+{
+    String a;
+}
+{
+    <ADD> <WS> a=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(SassCore.accumulator) + Double.parseDouble(a)); }
+}
+void subtract():
+{
+    String a;
+}
+{
+    <SUB> <WS> a=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(SassCore.accumulator) - Double.parseDouble(a)); }
+}
+void divide():
+{
+    String a;
+}
+{
+    <DIV> <WS> a=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(SassCore.accumulator) / Double.parseDouble(a)); }
+}
+void multiply():
+{
+    String a;
+}
+{
+    <MUL> <WS> a=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(SassCore.accumulator) * Double.parseDouble(a)); }
+}
+void move():
+{
+    String a;
+}
+{
+    <MOVE> <WS> a=source() <WS> destination(a)
+}
+void destination(String a):
+{}
+{
+    <OUT>   { IO.out(a); }
+|   <ACC>   { SassCore.accumulator = a; }
+}
+String source():
+{
+    String a;
+    Token t;
+}
+{
+    (   <IN>        { a=IO.in(); }
+    |   t=<STRING>  { 
+                        a = t.toString();
+                        a = a.substring(1,a.length()-1);
+                    }
+    |   t=<NUMBER>  { a = t.toString(); }
+    |   <ACC>       { a=SassCore.accumulator; })
+    { return a; }
+}
+

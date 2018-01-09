@@ -1,0 +1,268 @@
+options
+{
+    USER_TOKEN_MANAGER=true;
+}
+PARSER_BEGIN(SassParser)
+public class SassParser
+{}
+PARSER_END(SassParser)
+
+void parseLine():
+{}
+{
+    operation() <EOL>
+}
+void operation():
+{}
+{
+    memSet()
+|   jump()
+|   jsr()
+|   ret()
+|   testEqualString()
+|   testNotEqualString()
+|   testGreaterString()
+|   testGreaterEqualString()
+|   testLessString()
+|   testLessEqualString()
+|   testEqualNumber()
+|   testNotEqualNumber()
+|   testGreaterNumber()
+|   testGreaterEqualNumber()
+|   testLessNumber()
+|   testLessEqualNumber()
+|   testNumber()
+|   move()
+|   add()
+|   chatAt()
+|   length()
+|   subtract()
+|   divide()
+|   multiply()
+|   concat()
+|   exit()
+}
+void memSet():
+{
+    Token t;
+}
+{
+    <MSET> t=<NUMBER>  { SassCore.memSet((int)Double.parseDouble(t.toString())); }
+}
+void length():
+{
+    String a;
+}
+{
+    <LGTH> a=source()   { SassCore.accumulator = Integer.toString(a.length()); }
+}
+void testEqualString():
+{
+    String a, b;
+}
+{
+    <TEQS> a=source() b=source() { if(!a.equals(b)) SassCore.skipLine(); }
+}
+void testNotEqualString():
+{
+    String a, b;
+}
+{
+    <TNES> a=source() b=source() { if(a.equals(b)) SassCore.skipLine(); }
+}
+void testGreaterString():
+{
+    String a, b;
+}
+{
+    <TGTS> a=source() b=source() { if(!(a.compareTo(b) > 0)) SassCore.skipLine(); }
+}
+void testGreaterEqualString():
+{
+    String a, b;
+}
+{
+    <TGES> a=source() b=source() { if(!(a.compareTo(b) >= 0)) SassCore.skipLine(); }
+}
+void testLessString():
+{
+    String a, b;
+}
+{
+    <TLTS> a=source() b=source() { if(!(a.compareTo(b) < 0)) SassCore.skipLine(); }
+}
+void testLessEqualString():
+{
+    String a, b;
+}
+{
+    <TLES> a=source() b=source() { if(!(a.compareTo(b) <= 0)) SassCore.skipLine(); }
+}
+void testEqualNumber():
+{
+    String a, b;
+}
+{
+    <TEQN> a=source() b=source()  { if(Double.parseDouble(a) != Double.parseDouble(b)) SassCore.skipLine(); }
+}
+void testNotEqualNumber():
+{
+    String a, b;
+}
+{
+    <TNEN> a=source() b=source()  { if(Double.parseDouble(a) == Double.parseDouble(b)) SassCore.skipLine(); }
+}
+void testGreaterNumber():
+{
+    String a, b;
+}
+{
+    <TGTN> a=source() b=source()  { if(!(Double.parseDouble(a) > Double.parseDouble(b))) SassCore.skipLine(); }
+}
+void testGreaterEqualNumber():
+{
+    String a, b;
+}
+{
+    <TGEN> a=source() b=source()  { if(!(Double.parseDouble(a) >= Double.parseDouble(b))) SassCore.skipLine(); }
+}
+void testLessNumber():
+{
+    String a, b;
+}
+{
+    <TLTN> a=source() b=source()  { if(!(Double.parseDouble(a) < Double.parseDouble(b))) SassCore.skipLine(); }
+}
+void testLessEqualNumber():
+{
+    String a, b;
+}
+{
+    <TLEN> a=source() b=source() { if(!(Double.parseDouble(a) <= Double.parseDouble(b))) SassCore.skipLine(); }
+}
+void testNumber():
+{
+    String a;
+}
+{
+    <TNUM> a=source() { if(!a.matches(SassCore._number)) SassCore.skipLine(); }
+}
+void concat():
+{
+    String a, b;
+}
+{
+    <CAT> a=source() b=source()   { SassCore.accumulator = a+b; }
+}
+void chatAt():
+{
+    String a, b;
+}
+{
+    <CHAR> a=source() b=source() { SassCore.accumulator = String.valueOf(a.charAt((int)Double.parseDouble(b))); }
+}
+void add():
+{
+    String a;
+    String b;
+}
+{
+    <ADD> a=source() b=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(a) + Double.parseDouble(b)); }
+}
+void subtract():
+{
+    String a;
+    String b;
+}
+{
+    <SUB> a=source() b=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(a) - Double.parseDouble(b)); }
+}
+void divide():
+{
+    String a;
+    String b;
+}
+{
+    <DIV> a=source() b=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(a) / Double.parseDouble(b)); }
+}
+void multiply():
+{
+    String a;
+    String b;
+}
+{
+    <MUL> a=source() b=source()   { SassCore.accumulator = Double.toString(Double.parseDouble(a) * Double.parseDouble(b)); }
+}
+void move():
+{
+    String a;
+}
+{
+    <MOVE> a=source() destination(a)
+}
+void jump():
+{
+    Token t;
+}
+{
+    <JUMP> t=<LABEL>    { SassCore.jump(t.toString()); }
+}
+void jsr():
+{
+    Token t;
+}
+{
+    <JSR> t=<LABEL>     { SassCore.beginSubroutine(t.toString()); }
+}
+void ret():
+{}
+{
+    <RET>   { SassCore.endSubroutine(); }
+}
+void exit():
+{}
+{
+    <EXIT>  { System.exit(-1); }
+}
+void destination(String a):
+{
+    Token t;
+}
+{
+    <OUT>       { IO.out(a); }
+|   t=<POINTER> { SassCore.setPointer(t.toString(), (int)Double.parseDouble(a)); }
+|   <ACC>       { SassCore.accumulator = a; }
+|   <PUSH>      { SassCore.memPush(a); }
+|   <DATA>      { SassCore.register[0] = a; }
+|   <DATB>      { SassCore.register[1] = a; }
+|   <DATC>      { SassCore.register[2] = a; }
+|   <DATD>      { SassCore.register[3] = a; }
+|   <ADDR>      { SassCore.address = (int)Double.parseDouble(a); }
+|   <MEM>       { SassCore.memory[SassCore.address] = a; }
+}
+String source():
+{
+    String a;
+    Token t;
+}
+{
+    (   <IN>        { a=IO.in(); }
+    |   t=<STRING>  { 
+                        a = t.toString();
+                        a = a.substring(1,a.length()-1);
+                    }
+    |   t=<NUMBER>  { a = t.toString(); }
+    |   t=<POINTER> { a = Integer.toString(SassCore.getPointer(t.toString())); }
+    |   <ACC>       { a=SassCore.accumulator; }
+    |   <POP>       { a=SassCore.memPop(); }
+    |   <TOP>       { a=SassCore.memTop(); }
+    |   <DATA>      { a=SassCore.register[0]; }
+    |   <DATB>      { a=SassCore.register[1]; }
+    |   <DATC>      { a=SassCore.register[2]; }
+    |   <DATD>      { a=SassCore.register[3]; }
+    |   <ADDR>      { a=Integer.toString(SassCore.address); }
+    |   <MEM>       { a=SassCore.memory[SassCore.address]; }
+    |   <RAND>      { a=Double.toString(SassCore.random()); })
+    { return a; }
+}
+
